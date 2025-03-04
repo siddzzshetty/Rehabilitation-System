@@ -1,9 +1,10 @@
 import streamlit as st
 import streamlit as st
 from langchain_groq import ChatGroq
-from langchain.schema import HumanMessage, AIMessage
+from langchain.schema import HumanMessage, AIMessage,SystemMessage
+from langchain_core.prompts import ChatPromptTemplate
 from config import exercises
-from st_helper import chat_with_exercise_assistant, display_sidebar
+from st_helper import display_sidebar
 
 st.set_page_config(page_title="Fitness Exercise Assistant", layout="wide")
 
@@ -12,10 +13,15 @@ display_sidebar()
 st.title("💬 AI Chatbot")
 st.subheader("Chat with your AI fitness coach!")
 
+prompt_template = ChatPromptTemplate([
+    ("system", "You are an AI medical chatbot. You can answer general doubts about exercise but **cannot** provide any medical advice, exercise suggestions, exercise plans, or recommendations under any circumstances. Only a doctor can provide such guidance. If asked for specific exercises, always respond with: 'I cannot provide exercise recommendations. Please consult a doctor or a physiotherapist for advice.'"),
+    ("user", "{question}")
+])
+
 # Initialize chat history in session state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-        AIMessage(content="Hello! I'm your AI coach. How can I help with your exercise?")
+        AIMessage(content="Hello! I'm your AI assistant. I can help answer general questions about exercise. How can I assist you?")
     ]
 
 # Display past messages in order
@@ -35,8 +41,9 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    # Get AI response
-    response = chat_with_exercise_assistant(st.session_state.chat_history, user_input)
+    # Generate AI response using the prompt
+    format_prompt = prompt_template.format(question=user_input)
+    response = ChatGroq().invoke([HumanMessage(content=format_prompt)]).content
 
     # Display AI response
     with st.chat_message("assistant"):
