@@ -1,29 +1,11 @@
 import streamlit as st
 import pickle
 from config import exercises
+from st_helper import display_sidebar
 
 st.title("This is just a demo file 🎀")
-def show_sidebar():
-    # Sidebar Navigation
-    st.sidebar.title("Navigation")
-    if st.sidebar.button("📊 View Graphs"):
-        st.session_state.page = "graphs"
-        st.rerun()
+display_sidebar()
 
-    if st.sidebar.button("💬 Chatbot"):
-        st.switch_page("pages/chatbot_page.py")
-
-    if st.sidebar.button("pickle_page"):
-        st.switch_page("pages/my_pickle_page.py")
-
-    st.sidebar.subheader("Select Exercise")
-
-    for label, key in exercises.items():
-        if st.sidebar.button(label):
-            st.session_state.exercise = key
-            st.rerun()
-
-show_sidebar()
 def save_pickle_file(pose):
     with open("data.pkl", "wb") as f:
         pickle.dump(pose, f)
