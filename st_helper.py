@@ -194,28 +194,6 @@ def display_sidebar():
         st.switch_page("pages/final1.py")
 
 
-
-# Function to chat with AI assistant
-def chat_with_exercise_assistant(history, user_input):
-    # Keywords to detect restricted queries
-    restricted_keywords = ["medicine", "prescription", "exercise plan", "workout plan", "treatment", 
-                           "therapy", "rehabilitation", "physical therapy", "physiotherapy", "routine", 
-                           "recovery exercises", "fitness schedule", "training program"]
-
-    user_input_lower = user_input.lower()
-
-    # Check for restricted keywords
-    if any(keyword in user_input_lower for keyword in restricted_keywords):
-        response = "I'm not a medical professional. Please contact a physiotherapist for proper guidance."
-    else:
-        # Only send the latest message, not the entire history
-        ai_response = chat_model.invoke([HumanMessage(content=user_input)])
-
-        response = ai_response.content
-
-    return response
-    
-
 # Function to get exercise instructions
 def get_exercise_instructions(exercise):
     instructions = {
