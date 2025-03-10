@@ -65,6 +65,10 @@ def run_camera_feed(pose_placeholder):
     collecting_real_time = False #this is a flag (false-during prediction, true-calculating real time values)
     predicted_vs_real_storage = [] 
     focus_angles=[]
+    realtime_loss = []
+    run_buffer=[]
+    loss_buffer=[]
+    threshold=300
     pose = None 
     mp_pose = mp.solutions.pose
     mp_drawing = mp.solutions.drawing_utils
@@ -135,7 +139,16 @@ def run_camera_feed(pose_placeholder):
                         real_focus = [[list(real[3:5])for real in group[1]] for group in predicted_vs_real_storage]  
 
                         focus_angles = list(zip(predicted_focus, real_focus))
+                        realtime_loss.append(calculate_loss(predicted=focus_angles[-1][0], actual=focus_angles[-1][1]))
 
+                        run_buffer.append(focus_angles[-1][1])
+                        if len(run_buffer)> 3:
+                            run_buffer.pop(0)
+
+                        loss_buffer.append(realtime_loss[-1])
+                        if len(loss_buffer) > 3:
+                            loss_buffer.pop(0)
+                            
                         # Reset collection
                         collecting_real_time = False  
                         real_time_storage = []  
