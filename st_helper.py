@@ -16,7 +16,7 @@ import pickle
 import time
 import threading
 import torch.nn as nn
-from config import chat_model, exercises, GROQ_API_KEY
+from config import chat_model, exercises, GROQ_API_KEY, USE_MODEL
 
 pose = None 
 prompt_template = ChatPromptTemplate([
@@ -64,7 +64,7 @@ def get_pose(pose_placeholder):
 def calculate_loss(predicted, actual):
     mae_loss = nn.MSELoss()
     loss = mae_loss(torch.tensor(predicted),torch.tensor(actual))
-    return loss.item()
+    return loss.item()df
 
 def calculate_angle(a, b, c):
     """Calculate angle between three points."""
@@ -213,7 +213,7 @@ def run_camera_feed(pose_placeholder):
                         if len(loss_buffer) > BUFFER_LEN:
                             loss_buffer.pop(0)
 
-                        if loss_buffer:
+                        if USE_MODEL:
                             if all(x > 500 for x in loss_buffer):
                                 print("WRONG POSE******************************************************************")
                                 pose_status = False
