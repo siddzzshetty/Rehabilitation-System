@@ -69,7 +69,7 @@ display_sidebar()
 # st.header("📷 Live Camera Feed")
 
 # Instruction + Pose Box Layout
-col1, col2 = st.columns([3, 1])  # Adjust column ratio as needed
+col1, col2 = st.columns([5, 2])  # Adjust column ratio as needed
 
 with col1:
     st.header("📷 Live Camera Feed")
@@ -88,7 +88,7 @@ with col1:
 with col2:
     st.markdown("**🧍 Pose**")  # Pose title
     pose_placeholder = st.empty()
-    pose_placeholder.write("Waiting for pose...")  # No HTML, pure Streamlit
+    # pose_placeholder.write("Waiting for pose...")  # No HTML, pure Streamlit
 
  # Styled Chatbot Box
     with st.container(border=True):
@@ -101,15 +101,6 @@ if "camera_started" not in st.session_state:
 if "show_popup" not in st.session_state:
     st.session_state.show_popup = False
 
-
-
-# if not st.session_state.camera_started:
-#     if st.button("📷 Start Camera"):
-#         st.write("hiii")
-#         st.session_state.show_popup = True
-#         if st.session_state.show_popup:
-#             get_instructions()
-#         # st.rerun()
 
 
 # Run camera feed

@@ -4,12 +4,12 @@ from langchain_groq import ChatGroq
 from langchain.schema import HumanMessage, AIMessage,SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from config import exercises
-
-def chatbot_ui():
-    prompt_template = ChatPromptTemplate([
+prompt_template = ChatPromptTemplate([
         ("system", "You are an AI medical chatbot. You can answer general doubts about exercise but **cannot** provide any medical advice, exercise suggestions, exercise plans, or recommendations under any circumstances. Only a doctor can provide such guidance. If asked for specific exercises, always respond with: 'I cannot provide exercise recommendations. Please consult a doctor or a physiotherapist for advice.'"),
         ("user", "{question}")
     ])
+def chatbot_ui(prompt_template=prompt_template):
+    
 
     # Initialize chat history in session state
     if "frontpage_chat_history" not in st.session_state:
