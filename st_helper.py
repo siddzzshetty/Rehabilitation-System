@@ -11,15 +11,36 @@ from collections import deque
 from sklearn.preprocessing import StandardScaler
 import mediapipe as mp 
 from sklearn.preprocessing import MinMaxScaler
+from langchain_core.prompts import ChatPromptTemplate
 import pickle
 import time
 import threading
 import torch.nn as nn
 from config import chat_model, exercises, GROQ_API_KEY
 
-
 pose = None 
+prompt_template = ChatPromptTemplate([
+        ("system", """ you will be provided with angles of left knee and right knee of a patient undergoing physiotherapy. you will get angles of 3 frame runs,
+         where each frame run is of 5 frames and 2 columns(left, right knee).
+         you have to tell the user what is wrong in their form and how can they fix it. keep your answer concise. you have to answer in the following format.
+         Incorrect: what is wrong about my current form
+         Suggestion: how can i improve my current form 
+        """),
+        ("user", "{question}")
+    ])
 
+
+def save_pickle_file(pose):
+    with open("data.pkl", "wb") as f:
+        pickle.dump(pose, f)
+
+
+def load_pickle_file():
+    with open("data.pkl", "rb") as f:
+        pose = pickle.load(f)
+        st.write(pose)
+
+        
 def get_pose(pose_placeholder):
     """Update the displayed pose value dynamically with CSS classes."""
     # pose_placeholder = st.empty()
@@ -35,7 +56,7 @@ def get_pose(pose_placeholder):
                     unsafe_allow_html=True
                 )
 
-                print(pose)
+                # print(pose)
     except Exception as e:
         print(f"Error loading pose: {e}")
 
@@ -51,6 +72,48 @@ def calculate_angle(a, b, c):
     ab, bc = b - a, c - b
     cosine_angle = np.dot(ab, bc) / (np.linalg.norm(ab) * np.linalg.norm(bc))
     return np.degrees(np.arccos(np.clip(cosine_angle, -1.0, 1.0)))
+
+
+def chatbot_ui(prompt_template):
+    
+
+    # Initialize chat history in session state
+    if "frontpage_chat_history" not in st.session_state:
+        st.session_state.frontpage_chat_history = [
+            AIMessage(content="Hello! I'm your AI assistant. How can I assist you?")
+        ]
+
+    with st.container():
+        st.markdown("REMARKS ⚠️")  # Chatbot title
+        
+        # Messages container (Scroll effect via max_items)
+        messages_container = st.empty()
+
+        # Display chat history
+        messages_display = []
+        for message in st.session_state.frontpage_chat_history:
+            role = "assistant" if isinstance(message, AIMessage) else "user"
+            messages_display.append(f"**{role.capitalize()}:** {message.content}")
+
+        messages_container.write("\n\n".join(messages_display))
+
+        user_input = st.chat_input("Type your question here...")
+        # Process User Input
+        if user_input:
+            st.session_state.frontpage_chat_history.append(HumanMessage(content=user_input))
+
+            # Generate AI response
+            format_prompt = prompt_template.format(question=user_input)
+            response = ChatGroq().invoke([HumanMessage(content=format_prompt)]).content
+
+            # Append AI response
+            st.session_state.frontpage_chat_history.append(AIMessage(content=response))
+
+
+            # Refresh chat messages
+            messages_display.append(f"**User:** {user_input}")
+            messages_display.append(f"**Assistant:** {response}")
+            messages_container.write("\n\n".join(messages_display))
 
 
 # Function to run Camera Feed
@@ -73,6 +136,7 @@ def run_camera_feed(pose_placeholder):
     mp_pose = mp.solutions.pose
     mp_drawing = mp.solutions.drawing_utils
     exercise  = exercises
+    BUFFER_LEN = 7
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
 
@@ -120,7 +184,7 @@ def run_camera_feed(pose_placeholder):
                 
                 # Compute angles
                 angles = [calculate_angle(*angles_to_calculate[key]) for key in angles_to_calculate]
-                print(f"Calculated Angles: {angles}")
+                # print(f"Calculated Angles: {angles}")
 
                 # Input is normalized and added to sequence
                 normalized_angles = scaler.transform([angles])
@@ -142,12 +206,26 @@ def run_camera_feed(pose_placeholder):
                         realtime_loss.append(calculate_loss(predicted=focus_angles[-1][0], actual=focus_angles[-1][1]))
 
                         run_buffer.append(focus_angles[-1][1])
-                        if len(run_buffer)> 3:
+                        if len(run_buffer)> BUFFER_LEN:
                             run_buffer.pop(0)
 
                         loss_buffer.append(realtime_loss[-1])
-                        if len(loss_buffer) > 3:
+                        if len(loss_buffer) > BUFFER_LEN:
                             loss_buffer.pop(0)
+
+                        if loss_buffer:
+                            if all(x > 500 for x in loss_buffer):
+                                print("WRONG POSE******************************************************************")
+                                pose_status = False
+                                save_pickle_file(pose_status)
+                                
+
+                            else:
+                                print("RIGHT POSE###############################################################")
+                                pose_status = True
+                                save_pickle_file(pose_status)
+
+
                             
                         # Reset collection
                         collecting_real_time = False  
@@ -157,13 +235,13 @@ def run_camera_feed(pose_placeholder):
                 # Prediction
                 if len(pose_sequences) == INPUT_WINDOW  and not collecting_real_time:# if flag is false
                     INPUT_WINDOW_degrees = scaler.inverse_transform(np.array(pose_sequences))
-                    print(f" Input Window (Degrees) Before Prediction:\n{INPUT_WINDOW_degrees}") 
+                    # print(f" Input Window (Degrees) Before Prediction:\n{INPUT_WINDOW_degrees}") 
                     input_seq = torch.tensor([pose_sequences], dtype=torch.float32).to(device)
                     with torch.no_grad():
                         predicted_normalized = lstm_model(input_seq).cpu().numpy().squeeze(0)
                     predicted_angles = scaler.inverse_transform(predicted_normalized)
                     
-                    print(f"Predicted Angles:{predicted_angles}")
+                    # print(f"Predicted Angles:{predicted_angles}")
                     real_time_storage = []  
                     collecting_real_time = True  
                     frame_count = 0 
@@ -174,9 +252,9 @@ def run_camera_feed(pose_placeholder):
                     real_time_storage = []  
                     collecting_real_time = True  
                     
-                    # i have not focused on camera written display 
-                    for i, angle in enumerate(predicted_angles[0]):
-                        cv2.putText(image, f'Predicted {i+1}: {int(angle)}', (50, 300 + i * 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                    # # i have not focused on camera written display 
+                    # for i, angle in enumerate(predicted_angles[0]):
+                    #     cv2.putText(image, f'Predicted {i+1}: {int(angle)}', (50, 300 + i * 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
 
             # Display frame in Streamlit
@@ -194,16 +272,16 @@ def run_camera_feed(pose_placeholder):
 def display_sidebar():
     # Sidebar Navigation
     st.sidebar.title("Navigation")
-    if st.sidebar.button("📊 View Graphs"):
+    if st.sidebar.button("📊 View Graphs", key="view_graphs"):
         st.switch_page("pages/graphs.py")
 
-    if st.sidebar.button("💬 Chatbot"):
+    if st.sidebar.button("💬 Chatbot", key="chatbot"):
         st.switch_page("pages/chatbot_page.py")
 
-    if st.sidebar.button("pickle_page"):
-        st.switch_page("pages/my_pickle_page.py")
+    # if st.sidebar.button("pickle_page", key="pickle_page"):
+        # st.switch_page("pages/my_pickle_page.py")
 
-    if st.sidebar.button("Exercise"):
+    if st.sidebar.button("Exercise", key="exercise"):
         st.switch_page("pages/final1.py")
 
 
