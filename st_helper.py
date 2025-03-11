@@ -64,7 +64,7 @@ def get_pose(pose_placeholder):
 def calculate_loss(predicted, actual):
     mae_loss = nn.MSELoss()
     loss = mae_loss(torch.tensor(predicted),torch.tensor(actual))
-    return loss.item()df
+    return loss.item()
 
 def calculate_angle(a, b, c):
     """Calculate angle between three points."""
