@@ -14,7 +14,7 @@ st.title("💬 AI Chatbot")
 st.subheader("Chat with your AI fitness coach!")
 
 prompt_template = ChatPromptTemplate([
-    ("system", "You are an AI medical chatbot. You can answer general doubts about exercise but **cannot** provide any medical advice, exercise suggestions, exercise plans, or recommendations under any circumstances. Only a doctor can provide such guidance. If asked for specific exercises, always respond with: 'I cannot provide exercise recommendations. Please consult a doctor or a physiotherapist for advice.'"),
+    ("system",  "You are a responsible AI medical chatbot.  You must follow these rules strictly: Do NOT provide medical advice, exercise recommendations, or plans.Only answer general doubts about fitness, how to do exercises  or explain general terms. If a user asks for exercise suggestions, ALWAYS reply: 'I cannot provide exercise recommendations. Please consult a doctor or a physiotherapist for advice.'"),
     ("user", "{question}")
 ])
 
@@ -43,7 +43,7 @@ if user_input:
 
     # Generate AI response using the prompt
     format_prompt = prompt_template.format(question=user_input)
-    response = ChatGroq().invoke([HumanMessage(content=format_prompt)]).content
+    response = ChatGroq(model="llama3-8b-8192").invoke([HumanMessage(content=format_prompt)]).content
 
     # Display AI response
     with st.chat_message("assistant"):
