@@ -16,7 +16,9 @@ import pickle
 import time
 import threading
 import torch.nn as nn
+import pandas as pd
 from config import chat_model, exercises, GROQ_API_KEY, USE_MODEL
+
 
 pose = None 
 prompt_template = ChatPromptTemplate([
@@ -115,7 +117,38 @@ def chatbot_ui(prompt_template):
             messages_display.append(f"**Assistant:** {response}")
             messages_container.write("\n\n".join(messages_display))
 
+# Ensure data file exists
+data_file = "session_accuracy.csv"
+if not os.path.exists(data_file):
+    df = pd.DataFrame(columns=["Timestamp", "Accuracy"])
+    df.to_csv(data_file, index=False)
 
+def add_session_accuracy(loss_buffer):
+    """Logs mean accuracy for a completed session in a CSV."""
+    if not loss_buffer:
+        print("No data to calculate accuracy.")
+        return
+    
+    # Calculate Accuracy
+    true_count = sum(1 for x in loss_buffer if x <= 500)
+    false_count = sum(1 for x in loss_buffer if x > 500)
+    total = true_count + false_count
+    accuracy = (true_count / total) * 100 if total > 0 else 0
+    timestamp = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S') # Store in DD/MM format
+
+    # Check or create CSV
+    data_file = "session_accuracy.csv"
+    if not os.path.exists(data_file):
+        df = pd.DataFrame(columns=["Date", "Accuracy"])
+        df.to_csv(data_file,mode='a',index=False)
+
+    # Save Session Accuracy
+    df = pd.read_csv(data_file)
+    new_data = pd.DataFrame({"Timestamp": [timestamp], "Accuracy": [accuracy]})
+    new_data.to_csv(data_file, mode="a", header=False, index=False)
+
+    print(f"Session Accuracy Saved: {accuracy:.2f}% on {timestamp}")
+    
 # Function to run Camera Feed
 def run_camera_feed(pose_placeholder):
     os.environ["GROQ_API_KEY"] = GROQ_API_KEY
@@ -225,7 +258,9 @@ def run_camera_feed(pose_placeholder):
                                 pose_status = True
                                 save_pickle_file(pose_status)
 
-
+                            true_count = sum(1 for x in loss_buffer if x <= 500)
+                            false_count = sum(1 for x in loss_buffer if x > 500)
+                            add_session_accuracy(loss_buffer)
                             
                         # Reset collection
                         collecting_real_time = False  
@@ -359,3 +394,4 @@ def get_angles_to_calculate(landmarks, mp_pose):
     }
 
     return angles_to_calculate
+
