@@ -54,6 +54,23 @@ st.markdown(
 
 display_sidebar()
 
+# Handle Exercise Selection
+if "selected_exercise" not in st.session_state:
+    st.session_state.selected_exercise = None
+
+# Show instructions for the selected exercise
+selected_exercise = st.session_state.selected_exercise
+
+if selected_exercise:
+    st.header(f"📷 {selected_exercise.title()} Exercise")
+    st.markdown("**📌 Position yourself 2m away from the device.**")
+
+    instructions = get_exercise_instructions(selected_exercise)
+    for step in instructions:
+        st.write(f"✅ {step}")
+else:
+    st.warning("Please select an exercise to proceed.")
+
 # @st.dialog("📌 Instructions")
 # def get_instructions():
 #     exercise = "squat"
@@ -68,13 +85,12 @@ display_sidebar()
 # st.title(f"{exercise.title()} Exercise")
 # st.header("📷 Live Camera Feed")
 
+
 # Instruction + Pose Box Layout
 col1, col2 = st.columns([5, 2])  # Adjust column ratio as needed
 
 with col1:
     st.header("📷 Live Camera Feed")
-    st.markdown("**📌 Position yourself 2m away from the device.**")  # Permanent instruction
-    
     if "camera_started" not in st.session_state:
         st.session_state.camera_started = False
 
@@ -83,17 +99,18 @@ with col1:
             st.session_state.camera_started = True
 
     if st.session_state.camera_started:
-        run_camera_feed(st.empty())  # Ensure camera feed stays in place
+        # Ensure that the camera feed runs only for the selected exercise
+        if selected_exercise:
+            run_camera_feed(st.empty())  # Run the camera feed for the selected exercise
+        else:
+            st.warning("Please select an exercise first.")
 
 with col2:
     st.markdown("**🧍 Pose**")  # Pose title
     pose_placeholder = st.empty()
-    # pose_placeholder.write("Waiting for pose...")  # No HTML, pure Streamlit
-
- # Styled Chatbot Box
+    # Display the pose status based on the selected exercise
     with st.container(border=True):
-        chatbot_ui()  # Call chatbot function
-    
+        chatbot_ui()  # Call chatbot function to provide real-time feedback
 
 # Camera start button with popup
 if "camera_started" not in st.session_state:
@@ -101,8 +118,6 @@ if "camera_started" not in st.session_state:
 if "show_popup" not in st.session_state:
     st.session_state.show_popup = False
 
-
-
-# Run camera feed
-if st.session_state.camera_started:
-    run_camera_feed(pose_placeholder)
+# # Run camera feed
+# if st.session_state.camera_started and selected_exercise:
+#     run_camera_feed(pose_placeholder)
