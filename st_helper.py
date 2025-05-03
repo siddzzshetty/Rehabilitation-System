@@ -170,11 +170,28 @@ def run_camera_feed(pose_placeholder):
     mp_drawing = mp.solutions.drawing_utils
     exercise  = exercises
     BUFFER_LEN = 7
-
+    if "selected_exercise" not in st.session_state:
+        st.error("No exercise selected. Please go back and select an exercise.")
+        return
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
 
-    lstm_model = torch.jit.load(r'model_path/model_squats_scripted.pt')#for linux relative path
-    lstm_model.to(device)
+    selected_exercise = st.session_state.selected_exercise
+
+    # Define mapping exercise to model
+    model_paths = {
+        "squats": r"model_path\model_squats_scripted.pt",
+        "pushups": r"model_path\model_pushup_scripted.pt",
+        # Add more mappings here if needed
+    }
+
+    # Load model dynamically
+    model_path = model_paths.get(selected_exercise)
+    if not model_path:
+        st.error(f"No model available for exercise: {selected_exercise}")
+        return
+
+    lstm_model = torch.jit.load(model_path)
     lstm_model.eval()
 
     scaler = MinMaxScaler(feature_range=(0, 1))
