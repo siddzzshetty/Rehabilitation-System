@@ -1,16 +1,3 @@
-# import streamlit as st
-
-
-# with st.form("my_form"):
-#     st.write("Welcome! Your Rehabilitation Assistant is here to guide you! ")
-#     email = st.text_input(label = "Email", value="assisstant@gmail.com")
-#     password = st.text_input(label = "Password", value="pass@123")
-#     if st.form_submit_button():
-#         st.switch_page("pages/final1.py")
-
-
-
-
 import streamlit as st
 import os
 import io
@@ -28,7 +15,7 @@ Image.MAX_IMAGE_PIXELS = None
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "carbon-pride-453005-g3-2b983e32ddd4.json"
 
 # Predefined exercise keywords
-exercise_keywords = ["squats", "pushups", "jumping jacks", "sit ups", "pull-ups"]
+exercise_keywords = ["squat", "pushup", "jumping jack", "sit up", "pull-up"]
 
 # Initialize session state variables if they don't exist
 if "logged_in" not in st.session_state:

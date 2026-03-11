@@ -6,7 +6,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from config import exercises
 
 prompt_template = ChatPromptTemplate([
-    ("system", "You are a responsible AI medical chatbot.  You must follow these rules strictly: Do NOT provide medical advice, exercise recommendations, or plans.Only answer general doubts about fitness, how to do exercises  or explain general terms. If a user asks for exercise suggestions, ALWAYS reply: 'I cannot provide exercise recommendations. Please consult a doctor or a physiotherapist for advice.'"),
+    ("system", """You are a responsible AI medical chatbot.  You must follow these rules strictly:
+     Do NOT provide medical advice, exercise recommendations, or plans.
+     Only answer general doubts about fitness, how to do exercises  or explain general terms. 
+     If a user asks for exercise suggestions, ALWAYS reply: 'I cannot provide exercise recommendations. 
+     Please consult a doctor or a physiotherapist for advice.'"""),
     ("user", "{question}")
 ])
 
